@@ -17,16 +17,14 @@ const App = () => {
     <Router>
      <div>
         <Navigation/>
-
         <hr/>
-
-        <Route exact path={ROUTES.LANDING} component={LandingPage}/>
+        <Route exact path={ROUTES.LANDING} component={LandingPage}/> 
         <Route path={ROUTES.SIGNUP} component={SignUpPage} />
         <Route path={ROUTES.SIGNIN} component={SigninPage} />
         <Route path={ROUTES.PASSWORD_FORGET} component={PasswordForgetPage} />
         <Route path={ROUTES.HOME} component={HomePage} />
         <Route path={ROUTES.ACCOUNT} component={AccountPage} />
-        <Route path={ROUTES.ADMIN} component={AdminPage} />
+        <Route path={ROUTES.ADMIN} component={AdminPage} /> 
      </div>
     </Router>
     )
