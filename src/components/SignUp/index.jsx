@@ -21,11 +21,9 @@ const INITIAL_STATE = {
 };
 
 class SignUpFormBase extends Component {
-  constructor(props) {
-    super(props);
 
-    this.state = { ...INITIAL_STATE };
-  }
+  state = { ...INITIAL_STATE };
+
 
   onSubmit = event => {
     const { username, email, passwordOne } = this.state;
@@ -108,7 +106,10 @@ const SignUpLink = () => (
   </p>
 );
 
-const SignUpForm = withRouter(withFirebase(SignUpFormBase));
+const SignUpForm = compose(
+  withRouter,
+  withFirebase,
+  )(SignUpFormBase);
 
 export default SignUpPage;
 
