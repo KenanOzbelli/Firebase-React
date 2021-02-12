@@ -10,7 +10,7 @@ const INTIAL_STATE = {
 
 class PasswordChangeForm extends Component {
     state = {
-        ... INTIAL_STATE
+        ...INTIAL_STATE
     };
 
     onSubmit = event => {

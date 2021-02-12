@@ -23,7 +23,7 @@ const INITIAL_STATE = {
 };
 
 class SignInFormBase extends Component {
-
+  
   state = { ...INITIAL_STATE };
 
   onSubmit = event => {
