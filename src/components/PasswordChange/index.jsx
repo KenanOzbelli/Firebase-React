@@ -18,7 +18,7 @@ class PasswordChangeForm extends Component {
 
         this.props.firebase.doPasswordUpdate(passwordOne).then(() => {
             this.setState({
-                ... INTIAL_STATE
+                ...INTIAL_STATE
             })
         }).catch(error => {
             this.setState({error});
