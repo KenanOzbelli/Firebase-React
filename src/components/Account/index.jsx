@@ -6,13 +6,13 @@ import { withAuthorization, AuthUserContext } from '../Session';
 
 const Account = () => (
   <AuthUserContext.Consumer>
-    {authUser => {
+    {authUser => (
     <div>
       <h1>Account: {authUser.email}</h1>
       <PasswordForgetForm/>
       <PasswordChangeForm/>
     </div>
-    }}
+    )}
   </AuthUserContext.Consumer>
 );
 
