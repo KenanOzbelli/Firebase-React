@@ -30,8 +30,6 @@ class Admin extends Component {
 
   render(){
     const { users, loading } = this.state;
-
-
     return(
       <>
         <h1>Admin</h1>
