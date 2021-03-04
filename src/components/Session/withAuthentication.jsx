@@ -4,33 +4,18 @@ import { withFirebase } from '../Firebase';
 
 const withAuthentication = Component => {
     class withAuthentication extends React.Component {
+        state = {
+            authUser: null,
+        }
+
         componentDidMount(){
-            this.listener = this.props.firebase.auth.onAuthStateChanged(
+            this.listener = this.props.firebase.onAuthUserListener(
                 authUser => {
-                   if(authUser){
-                       this.props.firebase
-                        .user(authUser.uid)
-                        .once('value')
-                        .then(snapshot => {
-                            const dbUser = snapshot.val();
-
-                            // defualt empty roles
-                            if(!dbUser.roles){
-                                dbUser.roles = {};
-                            }
-                            // merge auth and db user
-                            authUser = {
-                               uid: authUser.uid,
-                               email: authUser.email,
-                               ...dbUser,
-                            };
-
-                            this.setState({ authUser });
-                        });
-                   } else {
-                       this.setState({ authUser: null });
-                   }
+                    this.setState({ authUser });
                 },
+                () => {
+                    this.setState({ authUser: null });
+                }
             );
         }
 
