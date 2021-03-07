@@ -24,7 +24,18 @@ const INITIAL_STATE = {
 
 class SignInFormBase extends Component {
   
-  state = { ...INITIAL_STATE };
+  state = { ...INITIAL_STATE, 
+            authUser: JSON.parse(localStorage.getItem('authUser'))
+  };
+
+  componentDidMount(){
+    if(this.state.authUser){
+      this.props.history.push('/home')
+    }else{
+      console.log('hello No USer')
+    }
+
+  }
 
   onSubmit = event => {
     const { email, password } = this.state;

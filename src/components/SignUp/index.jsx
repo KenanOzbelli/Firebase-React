@@ -115,7 +115,7 @@ class SignUpFormBase extends Component {
             name="isAdmin"
             type="checkbox"
             checked={isAdmin}
-            onChange={this.onChangebox}
+            onChange={this.onChangeCheckbox}
           />
         </label>
         <button disabled={isInvalid} type="submit">
