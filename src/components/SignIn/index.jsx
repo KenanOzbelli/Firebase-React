@@ -139,6 +139,7 @@ class SignInFacebookBase extends Component {
           .user(socialAuthUser.user.uid)
           .set({
             username: socialAuthUser.additionalUserInfo.profile.name,
+            email: socialAuthUser.additionalUserInfo.profile.email,
             roles: {},
           })
           .then(() => {
