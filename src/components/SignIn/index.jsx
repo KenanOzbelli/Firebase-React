@@ -146,31 +146,27 @@ class SignInFacebookBase extends Component {
       .doSignInWithFacebook()
       .then(socialAuthUser => {
         // Create a user in your Firebase Realtime Database too
-        this.props.firebase
-          .user(socialAuthUser.user.uid)
-          .set({
-            username: socialAuthUser.additionalUserInfo.profile.name,
-            email: socialAuthUser.additionalUserInfo.profile.email,
-            roles: {},
-          })
-          .then(() => {
-            this.setState({ error: null });
-            this.props.history.push(ROUTES.HOME);
-          })
-          .catch(error => {
-            if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-              error.message = ERROR_MSG_ACCOUNT_EXISTS;
-            }
-            
-            this.setState({ error });
-          });
+        return this.props.firebase
+        .user(socialAuthUser.user.uid)
+        .set({
+          username: socialAuthUser.additionalUserInfo.profile.name,
+          email: socialAuthUser.additionalUserInfo.profile.email,
+          roles:{},
+        });
       })
-      .catch(error => {
-        this.setState({ error });
-      });
+      .then(() => {
+        this.setState({ error: null });
+        this.props.history.push(ROUTES.HOME);
+      })
+      .catch(( error ) => {
+        if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
+          error.message = ERROR_MSG_ACCOUNT_EXISTS;
+        }
 
-    event.preventDefault();
-  };
+        this.setState({ error })
+      }) 
+      event.preventDefault();
+  }
 
 
   render(){

@@ -19,6 +19,8 @@ class Firebase {
         this.db = app.database();
 
         this.googleProvider = new app.auth.GoogleAuthProvider();
+        this.googleProvider.addScope('email');
+
         this.facebookProvider = new app.auth.FacebookAuthProvider();
     }
     

@@ -22,6 +22,8 @@ const INITIAL_STATE = {
   error: null,
 };
 
+const ERROR_CODE_ACCOUNT_EXISTS = 'auth/email-already-in-use'
+
 class SignUpFormBase extends Component {
   state = { ...INITIAL_STATE };
 
