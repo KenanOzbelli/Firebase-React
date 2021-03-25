@@ -7,6 +7,9 @@ import { PasswordForgetLink } from '../PasswordForget';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
 
+const ERROR_CODE_ACCOUNT_EXISTS= 'auth/account-exists-with-different-credential';
+const ERROR_MSG_ACCOUNT_EXISTS=`An account with an E-Mail address to this social account already exists. Try to login from this account instead and associate your social accounts on your personal account page.`;
+
 const SignInPage = () => (
   <div>
     <h1>SignIn</h1>
@@ -17,13 +20,6 @@ const SignInPage = () => (
     <SignUpLink />
   </div>
 );
-
-const ERROR_CODE_ACCOUNT_EXISTS = 
-  'auth/account-exists-with-different-credentials';
-
-const ERROR_MSG_ACCOUNT_EXISTS = 
-  `An account with an E-Mail address to this social account already exists. Try to login from this account 
-  instead and associate your social accounts on your personal account page.`;
 
 const INITIAL_STATE = {
   email: '',
@@ -96,7 +92,6 @@ class SignInFormBase extends Component {
 
 class SignInGoogleBase extends Component {
   state = { error: null};
-
   onSubmit = event => {    
     this.props.firebase
       .doSignInWithGoogle()
@@ -111,7 +106,7 @@ class SignInGoogleBase extends Component {
           })
         })
         .then(() => {
-          this.setState({ error:null });
+          this.setState({ error: null });
           this.props.history.push(ROUTES.HOME);
         })
         .catch(error => {
@@ -158,7 +153,7 @@ class SignInFacebookBase extends Component {
         this.setState({ error: null });
         this.props.history.push(ROUTES.HOME);
       })
-      .catch(( error ) => {
+      .catch( error => {
         if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
           error.message = ERROR_MSG_ACCOUNT_EXISTS;
         }
@@ -171,7 +166,6 @@ class SignInFacebookBase extends Component {
 
   render(){
     const { error } = this.state;
-
     return(
       <form onSubmit={this.onSubmit}>
         <button type="submit">Sign In with Facebook</button>
