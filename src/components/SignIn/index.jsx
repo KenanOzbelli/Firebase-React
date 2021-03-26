@@ -91,7 +91,8 @@ class SignInFormBase extends Component {
 }
 
 class SignInGoogleBase extends Component {
-  state = { error: null};
+  state = { error: null };
+
   onSubmit = event => {    
     this.props.firebase
       .doSignInWithGoogle()
