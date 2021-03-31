@@ -156,10 +156,28 @@ class SignInFacebookBase extends Component {
       })
       .catch( error => {
         if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-          error.message = ERROR_MSG_ACCOUNT_EXISTS;
+          const pendingCred = error.credential;
+          const email = error.email;
+
+          this.props.firebase
+            .fetchSignInMethodsForEmail(email)
+            .then(methods => {
+              if(methods[0] === 'password'){
+                return;
+              }
+
+              const provider = methods[0];
+              if(provider === 'google.com'){
+                this.props.firebase.doSignInWithGoogle().then(function(result){
+                  result.user.linkAndRetrieveDataWithCredential(pendingCred).then(usercred => {
+                    console.log('hello');
+                  })
+                })
+              }
+            })
         }
 
-        this.setState({ error })
+        // this.setState({ error })
       }) 
       event.preventDefault();
   }
