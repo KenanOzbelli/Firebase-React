@@ -177,7 +177,7 @@ class SignInFacebookBase extends Component {
             })
         }
 
-        // this.setState({ error })
+        this.setState({ error })
       }) 
       event.preventDefault();
   }
