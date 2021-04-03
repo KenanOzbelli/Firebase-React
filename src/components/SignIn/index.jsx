@@ -136,16 +136,38 @@ class SignInFacebookBase extends Component {
     pendingCred:null,  
     SocialLogin: null, 
     PasswordLogin: null,
+    Password: '',
     ProviderName: null, 
     error: null
   };
 
-  onPasswordSubmit = () => {
-
+  onPasswordSubmit = (event) => {
+    this.props.firebase.auth
+        .signInWithEmailAndPassword(this.state.Useremail, this.state.Password)
+        .then((result) => {
+          return result.user.linkWithCredential(this.state.pendingCred);
+        })
+        .then(() => {
+          this.setState({...INITIAL_STATE})
+          this.props.history.push(ROUTES.HOME);
+        })
+        event.preventDefault();
   }
 
-  onSocialSubmit = () => {
+  onChange = (event) => {
+    this.setState({[event.target.name]: event.target.value})
+  }
+
+  onSocialSubmit = (event) => {
+      event.preventDefault();
       
+      this.props.firebase.doSignInWithGoogle(this.state.Provider)
+      .then(result => {
+        result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
+          this.setState({...INITIAL_STATE})
+          this.props.history.push(ROUTES.HOME)
+        })
+      })
   }
 
   onSubmit = event => {
@@ -189,7 +211,7 @@ class SignInFacebookBase extends Component {
       event.preventDefault();
   }
   render(){
-    const {PasswordLogin, SocialLogin, Useremail, error, ProviderName } = this.state;
+    const {PasswordLogin, SocialLogin, Useremail, error, ProviderName, Password } = this.state;
     return(
       <>
       <form onSubmit={this.onSubmit}>
@@ -200,7 +222,7 @@ class SignInFacebookBase extends Component {
       {PasswordLogin ? 
         <form onSubmit={this.onPasswordSubmit}>
           <p>Password for {Useremail}</p>
-          <input />
+          <input name="Password" type="password" placeholder="password" value={Password} onChange={this.onChange}/>
           <button type="submit">Sign In</button>
         </form> 
       : null}
