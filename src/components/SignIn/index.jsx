@@ -1,13 +1,12 @@
 import React, { Component } from 'react';
 import { withRouter } from 'react-router-dom';
 import { compose } from 'recompose';
-
 import { SignUpLink } from '../SignUp';
 import { PasswordForgetLink } from '../PasswordForget';
 import { withFirebase } from '../Firebase';
 import * as ROUTES from '../../constants/routes';
 
-const ERROR_CODE_ACCOUNT_EXISTS= 'auth/account-exists-with-different-credential';
+const ERROR_CODE_ACCOUNT_EXISTS='auth/account-exists-with-different-credential';
 const ERROR_MSG_ACCOUNT_EXISTS=`An account with an E-Mail address to this social account already exists. Try to login from this account instead and associate your social accounts on your personal account page.`;
 
 const SignInPage = () => (
@@ -28,16 +27,13 @@ const INITIAL_STATE = {
 };
 
 class SignInFormBase extends Component {
-  
+
   state = { ...INITIAL_STATE, authUser: JSON.parse(localStorage.getItem('authUser'))};
 
   componentDidMount(){
     if(this.state.authUser){
-      this.props.history.push('/home')
-    }else{
-      console.log('hello No USer')
+      this.props.history.push(ROUTES.HOME)
     }
-
   }
 
   onSubmit = event => {
@@ -113,8 +109,7 @@ class SignInGoogleBase extends Component {
         .catch(error => {
         if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
             error.message = ERROR_MSG_ACCOUNT_EXISTS;
-          }
-          
+        }
         this.setState({ error });
         });
 
@@ -135,7 +130,23 @@ class SignInGoogleBase extends Component {
 }
 
 class SignInFacebookBase extends Component {
-  state = { error: null };
+  state = {
+    Useremail: null,
+    Provider:null, 
+    pendingCred:null,  
+    SocialLogin: null, 
+    PasswordLogin: null,
+    ProviderName: null, 
+    error: null
+  };
+
+  onPasswordSubmit = () => {
+
+  }
+
+  onSocialSubmit = () => {
+      
+  }
 
   onSubmit = event => {
     this.props.firebase
@@ -159,38 +170,48 @@ class SignInFacebookBase extends Component {
           const pendingCred = error.credential;
           const email = error.email;
 
-          this.props.firebase
-            .fetchSignInMethodsForEmail(email)
-            .then(methods => {
+          this.setState({Useremail: email, pendingCred: pendingCred});
+          
+          this.props.firebase.auth
+          .fetchSignInMethodsForEmail(email)
+          .then((methods) => {
               if(methods[0] === 'password'){
-                return;
+                this.setState({PasswordLogin: true})
+              }else{
+                const providername = methods[0].replace('.com','');
+                this.setState({SocialLogin: true, Provider: methods[0],ProviderName: providername})
               }
-
-              const provider = methods[0];
-              if(provider === 'google.com'){
-                this.props.firebase.doSignInWithGoogle().then(function(result){
-                  result.user.linkAndRetrieveDataWithCredential(pendingCred).then(usercred => {
-                    console.log('hello');
-                  })
-                })
-              }
-            })
+          })
+        }else{
+        this.setState({ error });
         }
-
-        this.setState({ error })
       }) 
       event.preventDefault();
   }
-
-
   render(){
-    const { error } = this.state;
+    const {PasswordLogin, SocialLogin, Useremail, error, ProviderName } = this.state;
     return(
+      <>
       <form onSubmit={this.onSubmit}>
         <button type="submit">Sign In with Facebook</button>
-
         {error && <p>{error.message}</p>}
       </form>
+
+      {PasswordLogin ? 
+        <form onSubmit={this.onPasswordSubmit}>
+          <p>Password for {Useremail}</p>
+          <input />
+          <button type="submit">Sign In</button>
+        </form> 
+      : null}
+
+      {SocialLogin ?
+      <form onSubmit={this.onSocialSubmit}>
+        <p> Social Login for {Useremail}</p>
+          <button type="submit">Sign In with {ProviderName}</button>
+        </form> 
+      : null}
+      </>
     )
   }
 }
