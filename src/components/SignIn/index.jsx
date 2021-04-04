@@ -9,7 +9,17 @@ import * as ROUTES from '../../constants/routes';
 const ERROR_CODE_ACCOUNT_EXISTS='auth/account-exists-with-different-credential';
 const ERROR_MSG_ACCOUNT_EXISTS=`An account with an E-Mail address to this social account already exists. Try to login from this account instead and associate your social accounts on your personal account page.`;
 
-const SignInPage = () => (
+const INITIAL_STATE = {
+  email: '',
+  password: '',
+  
+  error: null,
+};
+
+class SignInPage extends Component {
+
+  render(){
+    return(
   <div>
     <h1>SignIn</h1>
     <SignInForm />
@@ -18,13 +28,10 @@ const SignInPage = () => (
     <PasswordForgetLink/>
     <SignUpLink />
   </div>
-);
-
-const INITIAL_STATE = {
-  email: '',
-  password: '',
-  error: null,
+    )
+  }
 };
+
 
 class SignInFormBase extends Component {
 
@@ -142,14 +149,19 @@ class SignInFacebookBase extends Component {
   };
 
   onPasswordSubmit = (event) => {
-    this.props.firebase.auth
-        .signInWithEmailAndPassword(this.state.Useremail, this.state.Password)
+    this.props.firebase
+        .doSignInWithEmailAndPassword(this.state.Useremail, this.state.Password)
         .then((result) => {
+          this.setState({...INITIAL_STATE})
+          this.props.history.push(ROUTES.HOME)
           return result.user.linkWithCredential(this.state.pendingCred);
         })
         .then(() => {
           this.setState({...INITIAL_STATE})
           this.props.history.push(ROUTES.HOME);
+        })
+        .catch(error => {
+          this.setState({ error })
         })
         event.preventDefault();
   }
@@ -160,14 +172,43 @@ class SignInFacebookBase extends Component {
 
   onSocialSubmit = (event) => {
       event.preventDefault();
-      
-      this.props.firebase.doSignInWithGoogle(this.state.Provider)
+     switch(this.state.Provider){
+       case 'google.com':
+          this.GoogleSignIn()
+         break;
+       case 'facebook.com':
+         this.facebookSignIn()
+         break;
+         default: return;
+     }
+  }
+
+  GoogleSignIn = () => {
+      this.props.firebase.doSignInWithGoogle()
       .then(result => {
+        this.setState({...INITIAL_STATE})
+        this.props.history.push(ROUTES.HOME)
         result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
-          this.setState({...INITIAL_STATE})
-          this.props.history.push(ROUTES.HOME)
-        })
+        console.log(usercred)
       })
+    })
+    .catch(error => {
+      this.setState({ error })
+    })
+  }
+
+  facebookSignIn = () => {
+      this.props.firebase.doSignInWithFacebook()
+      .then(result => {
+        this.setState({...INITIAL_STATE})
+        this.props.history.push(ROUTES.HOME)
+        result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
+        console.log(usercred)
+      })
+    })
+    .catch(error => {
+      this.setState({ error })
+    })
   }
 
   onSubmit = event => {
