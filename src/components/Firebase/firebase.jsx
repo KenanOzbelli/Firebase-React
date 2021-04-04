@@ -29,8 +29,6 @@ class Firebase {
 
     doSignInWithGoogle = () => this.auth.signInWithPopup(this.googleProvider);
     
-    checkSignIn = (provider) => {if(provider === 'google.com'){ this.auth.signInWithPopup(this.googleProvider)}else if(provider === 'facebook.com'){this.auth.signInWithPopup(this.facebookProvider)}}
-
     doSignInWithFacebook = () => this.auth.signInWithPopup(this.facebookProvider);
     
     doSignOut = () => this.auth.signOut();
