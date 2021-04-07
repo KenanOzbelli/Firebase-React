@@ -24,6 +24,7 @@ const Account = () => (
     {authUser => (
     <div>
       <h1>Account: {authUser.email}</h1>
+      <img src={authUser.profilePic} width={50} height={50} alt={'User Profile'} />
       <PasswordForgetForm/>
       <PasswordChangeForm/>
       <LoginManagement authUser={authUser} />

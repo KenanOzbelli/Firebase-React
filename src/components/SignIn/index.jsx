@@ -12,19 +12,79 @@ const ERROR_MSG_ACCOUNT_EXISTS=`An account with an E-Mail address to this social
 const INITIAL_STATE = {
   email: '',
   password: '',
-  
   error: null,
+  Useremail: null,
+  Provider:null, 
+  pendingCred:null,  
+  SocialLogin: null, 
+  PasswordLogin: null,
+  Password: '',
+  ProviderName: null
 };
 
-class SignInPage extends Component {
+class MainSignInPage extends Component {
+
+  state={...INITIAL_STATE, authUser: JSON.parse(localStorage.getItem('authUser'))}
+
+    componentDidMount(){
+      if(this.state.authUser){
+        this.props.history.push(ROUTES.HOME)
+      }
+    }
+
+    onPasswordSubmit = (event) => {
+       const {email, password } = this.state;
+
+       this.props.firebase
+          .doSignInWithEmailAndPassword(email, password)
+          .then(()=> {
+            this.setState({...INITIAL_STATE});
+            this.props.history.push(ROUTES.HOME);
+          })
+          .catch((error)=>{
+            this.setState({ error })
+          })
+          event.preventDefault();
+    }
+
+    onChange = (event) => {
+      this.setState({ [event.target.name]: event.target.value });
+    }
+
+    onGoogleSubmit = (event) => {
+      this.props.firebase
+        .doSignInWithGoogle()
+        .then(socialAuthUser => {
+            return this.props.firebase
+              .user(socialAuthUser.user.uid)
+              .set({
+                username: socialAuthUser.user.displayName,
+                email: socialAuthUser.user.email,
+                profilePic: socialAuthUser.user.photoURL,
+                roles:{}
+              })
+        })
+        .then(() => {
+          this.setState({error: null});
+          this.props.history.push(ROUTES.HOME);
+        })
+        .catch(error => {
+          if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
+            error.message = ERROR_MSG_ACCOUNT_EXISTS
+          }
+        })
+        event.preventDefault();
+    }
 
   render(){
+    const { error } = this.state
     return(
   <div>
     <h1>SignIn</h1>
-    <SignInForm />
-    <SignInGoogle/>
-    <SignInFacebook /> 
+    <SignInFormBase state={this.state} onSubmit={this.onPasswordSubmit} onChange={this.onChange}/>
+    <SignInGoogleBase onSubmit={this.onGoogleSubmit}/>
+    <SignInFacebookBase /> 
+    {error && <p>{error.message}</p>}
     <PasswordForgetLink/>
     <SignUpLink />
   </div>
@@ -33,104 +93,73 @@ class SignInPage extends Component {
 };
 
 
-class SignInFormBase extends Component {
+const SignInFormBase = (props) => {
 
-  state = { ...INITIAL_STATE, authUser: JSON.parse(localStorage.getItem('authUser'))};
-
-  componentDidMount(){
-    if(this.state.authUser){
-      this.props.history.push(ROUTES.HOME)
-    }
-  }
-
-  onSubmit = event => {
-    const { email, password } = this.state;
-    this.props.firebase
-      .doSignInWithEmailAndPassword(email, password)
-      .then(() => {
-        this.setState({ ...INITIAL_STATE });
-        this.props.history.push(ROUTES.HOME);
-      })
-      .catch(error => {
-        this.setState({ error });
-      });
-
-    event.preventDefault();
-  };
-
-  onChange = event => {
-    this.setState({ [event.target.name]: event.target.value });
-  };
-
-  render() {
-    const { email, password, error } = this.state;
+    const { email, password } = props.state;
 
     const isInvalid = password === '' || email === '';
 
     return (
-      <form onSubmit={this.onSubmit}>
+      <form onSubmit={props.onSubmit}>
         <input
           name="email"
           value={email}
-          onChange={this.onChange}
+          onChange={props.onChange}
           type="text"
           placeholder="Email Address"
         />
         <input
           name="password"
           value={password}
-          onChange={this.onChange}
+          onChange={props.onChange}
           type="password"
           placeholder="Password"
         />
         <button disabled={isInvalid} type="submit">
           Sign In
         </button>
-
-        {error && <p>{error.message}</p>}
       </form>
     );
   }
-}
 
 class SignInGoogleBase extends Component {
-  state = { error: null };
+  // state = { error: null };
 
-  onSubmit = event => {    
-    this.props.firebase
-      .doSignInWithGoogle()
-      .then(socialAuthUser => {
-        // Create a user in your Firebase Realtime Database too
-        return this.props.firebase
-          .user(socialAuthUser.user.uid)
-          .set({
-            username: socialAuthUser.user.displayName,
-            email: socialAuthUser.user.email,
-            roles:{},
-          })
-        })
-        .then(() => {
-          this.setState({ error: null });
-          this.props.history.push(ROUTES.HOME);
-        })
-        .catch(error => {
-        if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-            error.message = ERROR_MSG_ACCOUNT_EXISTS;
-        }
-        this.setState({ error });
-        });
+  // onSubmit = event => {    
+  //   this.props.firebase
+  //     .doSignInWithGoogle()
+  //     .then(socialAuthUser => {
+  //       // Create a user in your Firebase Realtime Database too
+  //       return this.props.firebase
+  //         .user(socialAuthUser.user.uid)
+  //         .set({
+  //           username: socialAuthUser.user.displayName,
+  //           email: socialAuthUser.user.email,
+  //           roles:{},
+  //         })
+  //       })
+  //       .then(() => {
+  //         this.setState({ error: null });
+  //         this.props.history.push(ROUTES.HOME);
+  //       })
+  //       .catch(error => {
+  //       if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
+  //           error.message = ERROR_MSG_ACCOUNT_EXISTS;
+  //       }
+  //       this.setState({ error });
+  //       });
 
-    event.preventDefault();
-  };
+  //   event.preventDefault();
+  // };
 
   render(){
-    const { error } = this.state;
+    // const { error } = this.state;
 
     return(
-      <form onSubmit={this.onSubmit}>
+      <form onSubmit={this.props.onSubmit}>
         <button type="submit">Sign In with Google</button>
 
-        {error && <p>{error.message}</p>}
+        {/* {error && <p>{error.message}</p>} */}
       </form>
     );
   }
@@ -279,21 +308,12 @@ class SignInFacebookBase extends Component {
   }
 }
 
-const SignInForm = compose(
-  withRouter,
-  withFirebase,
-)(SignInFormBase);
-
-const SignInGoogle = compose(
+const SignInPage = compose(
   withRouter,
   withFirebase
-)(SignInGoogleBase)
+)(MainSignInPage)
 
-const SignInFacebook  = compose(
-  withRouter,
-  withFirebase
-)(SignInFacebookBase)
 
 export default SignInPage;
 
-export { SignInFacebook, SignInGoogle, SignInForm };
+export { SignInFacebookBase, SignInGoogleBase, SignInFormBase };
