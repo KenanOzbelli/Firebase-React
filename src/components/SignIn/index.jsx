@@ -13,13 +13,10 @@ const INITIAL_STATE = {
   email: '',
   password: '',
   error: null,
-  Useremail: null,
+  UserEmail: null,
   Provider:null, 
   pendingCred:null,  
-  SocialLogin: null, 
-  PasswordLogin: null,
-  Password: '',
-  ProviderName: null
+  SocialLogin: null
 };
 
 class MainSignInPage extends Component {
@@ -33,13 +30,13 @@ class MainSignInPage extends Component {
     }
 
     onPasswordSubmit = (event) => {
-       const {email, password } = this.state;
+       const {email, password} = this.state;
 
        this.props.firebase
           .doSignInWithEmailAndPassword(email, password)
           .then(()=> {
-            this.setState({...INITIAL_STATE});
             this.props.history.push(ROUTES.HOME);
+            this.setState({...INITIAL_STATE});
           })
           .catch((error)=>{
             this.setState({ error })
@@ -55,35 +52,76 @@ class MainSignInPage extends Component {
       this.props.firebase
         .doSignInWithGoogle()
         .then(socialAuthUser => {
-            return this.props.firebase
+              return this.props.firebase
               .user(socialAuthUser.user.uid)
               .set({
                 username: socialAuthUser.user.displayName,
                 email: socialAuthUser.user.email,
                 profilePic: socialAuthUser.user.photoURL,
-                roles:{}
+                roles:{},
               })
-        })
+          })   
         .then(() => {
-          this.setState({error: null});
-          this.props.history.push(ROUTES.HOME);
-        })
-        .catch(error => {
-          if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-            error.message = ERROR_MSG_ACCOUNT_EXISTS
-          }
-        })
+              this.setState({error: null});
+              this.props.history.push(ROUTES.HOME);
+            })
+            .catch(error => {
+              if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
+                error.message = ERROR_MSG_ACCOUNT_EXISTS
+              }
+            })
         event.preventDefault();
+    }
+
+    onFacebookSubmit = (event) => {
+      this.props.firebase.doSignInWithFacebook()
+      .then(socialAuthUser => {
+        // Create a user in your Firebase Realtime Database too 
+        return this.props.firebase
+        .user(socialAuthUser.user.uid)
+        .set({
+          username: socialAuthUser.additionalUserInfo.profile.name,
+          email: socialAuthUser.additionalUserInfo.profile.email,
+          profilePic: socialAuthUser.additionalUserInfo.profile.picture.data.url,
+          roles:{},
+        });
+      })
+      .then(() => {
+        this.setState({ error: null });
+        this.props.history.push(ROUTES.HOME);
+      })
+      .catch( error => {
+        if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
+            const pendingCred = error.credential;
+            const email = error.email;
+
+            this.setState({UserEmail: email, pendingCred: pendingCred});
+
+            this.props.firebase
+            .fetchSignInMethodsForEmail(email)
+            .then(methods => {
+                if(methods[0] === 'password'){
+                  this.setState({SocialLogin: false})
+                }else{
+                  this.setState({SocialLogin: true, Provider: methods[0]})
+                }
+            })
+
+        }
+      })
+      event.preventDefault();
     }
 
   render(){
     const { error } = this.state
     return(
+
   <div>
     <h1>SignIn</h1>
     <SignInFormBase state={this.state} onSubmit={this.onPasswordSubmit} onChange={this.onChange}/>
     <SignInGoogleBase onSubmit={this.onGoogleSubmit}/>
-    <SignInFacebookBase /> 
+    <SignInFacebookBase onSubmit={this.onFacebookSubmit}/> 
+    {/* <HandleExistingUserLogin state={this.state} /> */}
     {error && <p>{error.message}</p>}
     <PasswordForgetLink/>
     <SignUpLink />
@@ -122,174 +160,110 @@ const SignInFormBase = (props) => {
     );
   }
 
-class SignInGoogleBase extends Component {
-  // state = { error: null };
+const  SignInGoogleBase = (props) =>  (
+      <form onSubmit={props.onSubmit}>
+        <button type="submit">Sign In with Google</button>
+      </form>
+    )
 
-  // onSubmit = event => {    
+class SignInFacebookBase extends Component {
+
+  // onPasswordSubmit = (event) => {
   //   this.props.firebase
-  //     .doSignInWithGoogle()
-  //     .then(socialAuthUser => {
-  //       // Create a user in your Firebase Realtime Database too
-  //       return this.props.firebase
-  //         .user(socialAuthUser.user.uid)
-  //         .set({
-  //           username: socialAuthUser.user.displayName,
-  //           email: socialAuthUser.user.email,
-  //           roles:{},
-  //         })
+  //       .doSignInWithEmailAndPassword(this.state.Useremail, this.state.Password)
+  //       .then((result) => {
+  //         this.setState({...INITIAL_STATE})
+  //         this.props.history.push(ROUTES.HOME)
+  //         return result.user.linkWithCredential(this.state.pendingCred);
   //       })
   //       .then(() => {
-  //         this.setState({ error: null });
+  //         this.setState({...INITIAL_STATE})
   //         this.props.history.push(ROUTES.HOME);
   //       })
   //       .catch(error => {
+  //         this.setState({ error })
+  //       })
+  //       event.preventDefault();
+  // }
+
+  // onChange = (event) => {
+  //   this.setState({[event.target.name]: event.target.value})
+  // }
+
+  // onSocialSubmit = (event) => {
+  //     event.preventDefault();
+  //    switch(this.state.Provider){
+  //      case 'google.com':
+  //         this.GoogleSignIn()
+  //        break;
+  //      case 'facebook.com':
+  //        this.facebookSignIn()
+  //        break;
+  //        default: return;
+  //    }
+  // }
+
+  // GoogleSignIn = () => {
+  //     this.props.firebase.doSignInWithGoogle()
+  //     .then(result => {
+  //       this.setState({...INITIAL_STATE})
+  //       this.props.history.push(ROUTES.HOME)
+  //       result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
+  //       console.log(usercred)
+  //     })
+  //   })
+  //   .catch(error => {
+  //     this.setState({ error })
+  //   })
+  // }
+
+  // facebookSignIn = () => {
+  //     this.props.firebase.doSignInWithFacebook()
+  //     .then(result => {
+  //       this.setState({...INITIAL_STATE})
+  //       this.props.history.push(ROUTES.HOME)
+  //       result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
+  //       console.log(usercred)
+  //     })
+  //   })
+  //   .catch(error => {
+  //     this.setState({ error })
+  //   })
+  // }
+
+  //     .catch( error => {
   //       if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-  //           error.message = ERROR_MSG_ACCOUNT_EXISTS;
-  //       }
-  //       this.setState({ error });
-  //       });
+  //         const pendingCred = error.credential;
+  //         const email = error.email;
 
-  //   event.preventDefault();
-  // };
-
-  render(){
-    // const { error } = this.state;
-
-    return(
-      <form onSubmit={this.props.onSubmit}>
-        <button type="submit">Sign In with Google</button>
-
-        {/* {error && <p>{error.message}</p>} */}
-      </form>
-    );
-  }
-}
-
-class SignInFacebookBase extends Component {
-  state = {
-    Useremail: null,
-    Provider:null, 
-    pendingCred:null,  
-    SocialLogin: null, 
-    PasswordLogin: null,
-    Password: '',
-    ProviderName: null, 
-    error: null
-  };
-
-  onPasswordSubmit = (event) => {
-    this.props.firebase
-        .doSignInWithEmailAndPassword(this.state.Useremail, this.state.Password)
-        .then((result) => {
-          this.setState({...INITIAL_STATE})
-          this.props.history.push(ROUTES.HOME)
-          return result.user.linkWithCredential(this.state.pendingCred);
-        })
-        .then(() => {
-          this.setState({...INITIAL_STATE})
-          this.props.history.push(ROUTES.HOME);
-        })
-        .catch(error => {
-          this.setState({ error })
-        })
-        event.preventDefault();
-  }
-
-  onChange = (event) => {
-    this.setState({[event.target.name]: event.target.value})
-  }
-
-  onSocialSubmit = (event) => {
-      event.preventDefault();
-     switch(this.state.Provider){
-       case 'google.com':
-          this.GoogleSignIn()
-         break;
-       case 'facebook.com':
-         this.facebookSignIn()
-         break;
-         default: return;
-     }
-  }
-
-  GoogleSignIn = () => {
-      this.props.firebase.doSignInWithGoogle()
-      .then(result => {
-        this.setState({...INITIAL_STATE})
-        this.props.history.push(ROUTES.HOME)
-        result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
-        console.log(usercred)
-      })
-    })
-    .catch(error => {
-      this.setState({ error })
-    })
-  }
-
-  facebookSignIn = () => {
-      this.props.firebase.doSignInWithFacebook()
-      .then(result => {
-        this.setState({...INITIAL_STATE})
-        this.props.history.push(ROUTES.HOME)
-        result.user.linkAndRetrieveDataWithCredential(this.state.pendingCred).then(usercred => {
-        console.log(usercred)
-      })
-    })
-    .catch(error => {
-      this.setState({ error })
-    })
-  }
-
-  onSubmit = event => {
-    this.props.firebase
-      .doSignInWithFacebook()
-      .then(socialAuthUser => {
-        // Create a user in your Firebase Realtime Database too
-        return this.props.firebase
-        .user(socialAuthUser.user.uid)
-        .set({
-          username: socialAuthUser.additionalUserInfo.profile.name,
-          email: socialAuthUser.additionalUserInfo.profile.email,
-          roles:{},
-        });
-      })
-      .then(() => {
-        this.setState({ error: null });
-        this.props.history.push(ROUTES.HOME);
-      })
-      .catch( error => {
-        if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-          const pendingCred = error.credential;
-          const email = error.email;
-
-          this.setState({Useremail: email, pendingCred: pendingCred});
+  //         this.setState({Useremail: email, pendingCred: pendingCred});
           
-          this.props.firebase.auth
-          .fetchSignInMethodsForEmail(email)
-          .then((methods) => {
-              if(methods[0] === 'password'){
-                this.setState({PasswordLogin: true})
-              }else{
-                const providername = methods[0].replace('.com','');
-                this.setState({SocialLogin: true, Provider: methods[0],ProviderName: providername})
-              }
-          })
-        }else{
-        this.setState({ error });
-        }
-      }) 
-      event.preventDefault();
-  }
+  //         this.props.firebase.auth
+  //         .fetchSignInMethodsForEmail(email)
+  //         .then((methods) => {
+  //             if(methods[0] === 'password'){
+  //               this.setState({PasswordLogin: true})
+  //             }else{
+  //               const providername = methods[0].replace('.com','');
+  //               this.setState({SocialLogin: true, Provider: methods[0],ProviderName: providername})
+  //             }
+  //         })
+  //       }else{
+  //       this.setState({ error });
+  //       }
+  //     }) 
+  //     event.preventDefault();
+  // }
   render(){
-    const {PasswordLogin, SocialLogin, Useremail, error, ProviderName, Password } = this.state;
+    // const {PasswordLogin, SocialLogin, Useremail, error, ProviderName, Password } = this.state;
     return(
       <>
-      <form onSubmit={this.onSubmit}>
+      <form onSubmit={this.props.onSubmit}>
         <button type="submit">Sign In with Facebook</button>
-        {error && <p>{error.message}</p>}
+        {/* {error && <p>{error.message}</p>} */}
       </form>
 
-      {PasswordLogin ? 
+      {/* {PasswordLogin ? 
         <form onSubmit={this.onPasswordSubmit}>
           <p>Password for {Useremail}</p>
           <input name="Password" type="password" placeholder="password" value={Password} onChange={this.onChange}/>
@@ -302,7 +276,7 @@ class SignInFacebookBase extends Component {
         <p> Social Login for {Useremail}</p>
           <button type="submit">Sign In with {ProviderName}</button>
         </form> 
-      : null}
+      : null} */}
       </>
     )
   }
