@@ -44,12 +44,17 @@ class Firebase {
     onAuthUserListener = (next, fallback) => 
         this.auth.onAuthStateChanged(authUser => {
             if (authUser){
+                console.log(authUser)
                 this.user(authUser.uid)
-                  .once('value')
+                  .get()
                   .then(snapshot => {
-
                     const dbUser = snapshot.val();
-             
+                    let profileUrl = authUser.photoURL;
+
+                        if(authUser.photoURL == null){
+                             profileUrl = 'https://graph.facebook.com/3860235584092637/picture'
+                        }
+
                         //   default empty roles
                           if(!dbUser.roles){
                               dbUser.roles = {};
@@ -59,9 +64,10 @@ class Firebase {
                         authUser = {
                             uid: authUser.uid,
                             email: authUser.email,
+                            photoURL: profileUrl,
                             ...dbUser,
                         };
-                    next(authUser);
+                        next(authUser);
                   });
             }else{
                 fallback();
@@ -71,8 +77,8 @@ class Firebase {
     // * User API *
 
     user = uid => this.db.ref(`users/${uid}`);
-
-    getUser = uid => this.db.ref(`users/${uid}`).get();
+    
+    updatePhotoURL = url => this.auth.currentUser.updateProfile({photoURL: url});
 
     users = () => this.db.ref('users');
 }

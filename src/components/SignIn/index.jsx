@@ -52,15 +52,13 @@ class MainSignInPage extends Component {
       this.props.firebase
         .doSignInWithGoogle()
         .then(socialAuthUser => {
-              return this.props.firebase
-              .user(socialAuthUser.user.uid)
-              .set({
-                username: socialAuthUser.user.displayName,
-                email: socialAuthUser.user.email,
-                profilePic: socialAuthUser.user.photoURL,
-                roles:{},
-              })
-          })   
+          // Create a user in Firebase Realtime Database 
+          this.props.firebase.user(socialAuthUser.user.uid).set({
+            username: socialAuthUser.user.displayName,
+            email: socialAuthUser.user.email,
+            roles:{},
+          })
+        })   
         .then(() => {
               this.setState({error: null});
               this.props.history.push(ROUTES.HOME);
@@ -72,19 +70,17 @@ class MainSignInPage extends Component {
             })
         event.preventDefault();
     }
-
     onFacebookSubmit = (event) => {
       this.props.firebase.doSignInWithFacebook()
       .then(socialAuthUser => {
-        // Create a user in your Firebase Realtime Database too 
-        return this.props.firebase
+        // Create a user in your Firebase Realtime Database
+        this.props.firebase
         .user(socialAuthUser.user.uid)
         .set({
           username: socialAuthUser.additionalUserInfo.profile.name,
           email: socialAuthUser.additionalUserInfo.profile.email,
-          profilePic: socialAuthUser.additionalUserInfo.profile.picture.data.url,
           roles:{},
-        });
+        })
       })
       .then(() => {
         this.setState({ error: null });

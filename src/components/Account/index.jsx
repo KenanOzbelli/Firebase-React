@@ -24,7 +24,8 @@ const Account = () => (
     {authUser => (
     <div>
       <h1>Account: {authUser.email}</h1>
-      <img src={authUser.profilePic} width={50} height={50} alt={'User Profile'} />
+      <img src={authUser.photoURL} width={100} height={100} alt={'User Profile'} />
+      <ChangePhotoURL />
       <PasswordForgetForm/>
       <PasswordChangeForm/>
       <LoginManagement authUser={authUser} />
@@ -32,6 +33,19 @@ const Account = () => (
     )}
   </AuthUserContext.Consumer>
 );
+
+const ChangePhotoURLBase = (props) => {
+    const ProfilePhotoURL = () => {
+        let url;
+        props.firebase.updatePhotoURL(url);
+        window.location.reload();
+    }
+    return(
+      <div style={{display:'none'}}>
+      <button onClick={ProfilePhotoURL}>Change Photo URL</button>
+      </div>
+    )
+}
 
 class LoginManagementBase extends Component {
 
@@ -103,6 +117,7 @@ class LoginManagementBase extends Component {
   }
 }
 const LoginManagement = withFirebase(LoginManagementBase);
+const ChangePhotoURL = withFirebase(ChangePhotoURLBase);
 
 const condition = authUser => !!authUser;
 
