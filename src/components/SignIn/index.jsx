@@ -4,6 +4,8 @@ import { compose } from 'recompose';
 import { SignUpLink } from '../SignUp';
 import { PasswordForgetLink } from '../PasswordForget';
 import { withFirebase } from '../Firebase';
+import { ReactComponent as GOOGLESVG } from '../../assets/google.svg';
+import { ReactComponent as FACEBOOKSVG } from '../../assets/facebook.svg';
 import * as ROUTES from '../../constants/routes';
 
 const ERROR_CODE_ACCOUNT_EXISTS='auth/account-exists-with-different-credential';
@@ -13,7 +15,7 @@ const INITIAL_STATE = {
   email: '',
   password: '',
   error: null,
-  UserEmail: null,
+  Useremail: null,
   Provider:null, 
   pendingCred:null,  
   SocialLogin: null
@@ -28,7 +30,7 @@ class MainSignInPage extends Component {
         this.props.history.push(ROUTES.HOME)
       }
     }
-
+    // Regular Login
     onPasswordSubmit = (event) => {
        const {email, password} = this.state;
 
@@ -48,6 +50,7 @@ class MainSignInPage extends Component {
       this.setState({ [event.target.name]: event.target.value });
     }
 
+  //  Regular Social Logins
     onGoogleSubmit = (event) => {
       this.props.firebase
         .doSignInWithGoogle()
@@ -70,16 +73,24 @@ class MainSignInPage extends Component {
             })
         event.preventDefault();
     }
+
     onFacebookSubmit = (event) => {
       this.props.firebase.doSignInWithFacebook()
       .then(socialAuthUser => {
         // Create a user in your Firebase Realtime Database
-        this.props.firebase
+       return this.props.firebase
         .user(socialAuthUser.user.uid)
         .set({
           username: socialAuthUser.additionalUserInfo.profile.name,
           email: socialAuthUser.additionalUserInfo.profile.email,
           roles:{},
+        })
+        .then(async () => {
+         var user = await this.props.firebase.auth.currentUser;
+
+         if(user.photoURL.includes('picture')){
+           this.props.firebase.updatePhotoURL(socialAuthUser.additionalUserInfo.profile.picture.data.url);
+         }
         })
       })
       .then(() => {
@@ -91,7 +102,7 @@ class MainSignInPage extends Component {
             const pendingCred = error.credential;
             const email = error.email;
 
-            this.setState({UserEmail: email, pendingCred: pendingCred});
+            this.setState({Useremail: email, pendingCred: pendingCred});
 
             this.props.firebase
             .fetchSignInMethodsForEmail(email)
@@ -102,33 +113,96 @@ class MainSignInPage extends Component {
                   this.setState({SocialLogin: true, Provider: methods[0]})
                 }
             })
-
-        }
+          }else{
+            this.setState({ error });
+          }
       })
       event.preventDefault();
     }
 
+    // HandleExistingLogins
+
+    GoogleSignin = () => {
+      console.log('hello')
+    }
+
+    facebookSignIn = () => {
+
+    }
+
+    onSocialSubmit = (event) => {
+      event.preventDefault();
+      switch(this.state.Provider){
+        case 'google.com':
+          this.GoogleSignin();
+        break;
+        case 'facebook.com':
+          this.facebookSignIn();
+          break;
+        default: return;
+      }
+    }
+   
+
+
   render(){
-    const { error } = this.state
+    const { SocialLogin, error } = this.state
     return(
 
   <div>
+    {SocialLogin === null  ? 
+    <div>
     <h1>SignIn</h1>
     <SignInFormBase state={this.state} onSubmit={this.onPasswordSubmit} onChange={this.onChange}/>
     <SignInGoogleBase onSubmit={this.onGoogleSubmit}/>
     <SignInFacebookBase onSubmit={this.onFacebookSubmit}/> 
-    {/* <HandleExistingUserLogin state={this.state} /> */}
-    {error && <p>{error.message}</p>}
     <PasswordForgetLink/>
     <SignUpLink />
+    </div> : <HandleExistingUserLogin state={this.state} onchange={this.onChange} onSocialSubmit={this.onSocialSubmit} />}
+    {error && <p>{error.message}</p>}
   </div>
     )
   }
 };
 
+const HandleExistingUserLogin  = (props) => {
+  const {SocialLogin, Useremail, error, Provider, Password } = props.state;
+  
+  return(
+    <>
+      {SocialLogin ?  
+
+      <form onSubmit={props.onSocialSubmit}>
+        {Provider === 'google.com' ? 
+         <>
+            <p> Account for {Useremail} Found</p>
+          <div style={{display:'inline-block'}}>
+              <GOOGLESVG />
+            <button type="submit">Sign In with Google</button>
+          </div>
+         </>
+        : 
+        <>
+            <p> Account for {Useremail}</p>
+            <div style={{display:'inline-block'}}>
+              <FACEBOOKSVG />
+            <button type="submit">Sign In with Facebook</button>
+            </div>
+        </>
+        }
+      </form>
+      :
+      <form onSubmit={props.onPasswordSubmit}>
+          <p>Password for {Useremail}</p>
+          <input name="Password" type="password" placeholder="password" value={Password} onChange={props.onChange}/>
+          <button type="submit">Sign In</button>
+      </form>
+          }
+    </>
+  )
+}
 
 const SignInFormBase = (props) => {
-
     const { email, password } = props.state;
 
     const isInvalid = password === '' || email === '';
@@ -162,7 +236,7 @@ const  SignInGoogleBase = (props) =>  (
       </form>
     )
 
-class SignInFacebookBase extends Component {
+const SignInFacebookBase = (props) => (
 
   // onPasswordSubmit = (event) => {
   //   this.props.firebase
@@ -182,22 +256,6 @@ class SignInFacebookBase extends Component {
   //       event.preventDefault();
   // }
 
-  // onChange = (event) => {
-  //   this.setState({[event.target.name]: event.target.value})
-  // }
-
-  // onSocialSubmit = (event) => {
-  //     event.preventDefault();
-  //    switch(this.state.Provider){
-  //      case 'google.com':
-  //         this.GoogleSignIn()
-  //        break;
-  //      case 'facebook.com':
-  //        this.facebookSignIn()
-  //        break;
-  //        default: return;
-  //    }
-  // }
 
   // GoogleSignIn = () => {
   //     this.props.firebase.doSignInWithGoogle()
@@ -226,57 +284,12 @@ class SignInFacebookBase extends Component {
   //     this.setState({ error })
   //   })
   // }
-
-  //     .catch( error => {
-  //       if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-  //         const pendingCred = error.credential;
-  //         const email = error.email;
-
-  //         this.setState({Useremail: email, pendingCred: pendingCred});
-          
-  //         this.props.firebase.auth
-  //         .fetchSignInMethodsForEmail(email)
-  //         .then((methods) => {
-  //             if(methods[0] === 'password'){
-  //               this.setState({PasswordLogin: true})
-  //             }else{
-  //               const providername = methods[0].replace('.com','');
-  //               this.setState({SocialLogin: true, Provider: methods[0],ProviderName: providername})
-  //             }
-  //         })
-  //       }else{
-  //       this.setState({ error });
-  //       }
-  //     }) 
-  //     event.preventDefault();
-  // }
-  render(){
-    // const {PasswordLogin, SocialLogin, Useremail, error, ProviderName, Password } = this.state;
-    return(
       <>
-      <form onSubmit={this.props.onSubmit}>
+      <form onSubmit={props.onSubmit}>
         <button type="submit">Sign In with Facebook</button>
-        {/* {error && <p>{error.message}</p>} */}
       </form>
-
-      {/* {PasswordLogin ? 
-        <form onSubmit={this.onPasswordSubmit}>
-          <p>Password for {Useremail}</p>
-          <input name="Password" type="password" placeholder="password" value={Password} onChange={this.onChange}/>
-          <button type="submit">Sign In</button>
-        </form> 
-      : null}
-
-      {SocialLogin ?
-      <form onSubmit={this.onSocialSubmit}>
-        <p> Social Login for {Useremail}</p>
-          <button type="submit">Sign In with {ProviderName}</button>
-        </form> 
-      : null} */}
       </>
     )
-  }
-}
 
 const SignInPage = compose(
   withRouter,
@@ -286,4 +299,4 @@ const SignInPage = compose(
 
 export default SignInPage;
 
-export { SignInFacebookBase, SignInGoogleBase, SignInFormBase };
+export { SignInFacebookBase, SignInGoogleBase, SignInFormBase, HandleExistingUserLogin  };

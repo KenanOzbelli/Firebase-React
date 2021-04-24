@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { PasswordForgetForm } from '../PasswordForget';
 import PasswordChangeForm from '../PasswordChange';
-import { withAuthorization, AuthUserContext } from '../Session';
+import { withAuthorization} from '../Session';
 import { withFirebase } from '../Firebase';
 
 const SIGN_IN_METHODS = [
@@ -19,33 +19,43 @@ const SIGN_IN_METHODS = [
   },
 ];
 
-const Account = () => (
-  <AuthUserContext.Consumer>
-    {authUser => (
-    <div>
-      <h1>Account: {authUser.email}</h1>
-      <img src={authUser.photoURL} width={100} height={100} alt={'User Profile'} />
-      <ChangePhotoURL />
-      <PasswordForgetForm/>
-      <PasswordChangeForm/>
-      <LoginManagement authUser={authUser} />
-    </div>
-    )}
-  </AuthUserContext.Consumer>
-);
+class AccountBase extends Component {
 
-const ChangePhotoURLBase = (props) => {
-    const ProfilePhotoURL = () => {
-        let url;
-        props.firebase.updatePhotoURL(url);
-        window.location.reload();
-    }
+  state = {
+    user: null
+  }
+
+  componentDidMount(){
+    this.getUser = this.props.firebase.auth.onAuthStateChanged(
+       authUser => {
+        if(authUser !== null){
+            this.setState({user: authUser})
+        }
+     });
+  }
+
+  componentWillUnmount(){
+    this.getUser();
+  }
+
+  render(){
+    const { user } = this.state;
     return(
-      <div style={{display:'none'}}>
-      <button onClick={ProfilePhotoURL}>Change Photo URL</button>
+      <>
+      {user == null? 
+      <p>Loading....</p> :
+      <div>
+        <h1>Account: {user.email}</h1>
+        <img src={user.photoURL} width={50} height={50} alt={'User Profile'} />
+        <PasswordForgetForm/>
+        <PasswordChangeForm/>
+        <LoginManagement authUser={user} />
       </div>
-    )
-}
+      }
+      </>
+  )
+  }
+};
 
 class LoginManagementBase extends Component {
 
@@ -54,11 +64,10 @@ class LoginManagementBase extends Component {
     error:null,
   }
 
-
   componentDidMount(){
     this.fetchSignInMethods();
   }
-
+  
   fetchSignInMethods = () => {
     this.props.firebase.auth
       .fetchSignInMethodsForEmail(this.props.authUser.email)
@@ -81,8 +90,6 @@ class LoginManagementBase extends Component {
       .then(this.fetchSignInMethods)
       .catch(error => this.setState({ error }));
   };
-
-
 
   render(){
     const { activeSignInMethods, error } = this.state;
@@ -117,7 +124,8 @@ class LoginManagementBase extends Component {
   }
 }
 const LoginManagement = withFirebase(LoginManagementBase);
-const ChangePhotoURL = withFirebase(ChangePhotoURLBase);
+
+const Account = withFirebase(AccountBase)                   
 
 const condition = authUser => !!authUser;
 
