@@ -52,7 +52,9 @@ class Firebase {
                           if(!dbUser.roles){
                               dbUser.roles = {};
                           }
-
+                        if(authUser.photoURL == null){
+                           this.auth.currentUser.updateProfile({photoURL:'https://img.icons8.com/clouds/344/head-profile.png'})
+                        }
                         // merge auth and db user 
                         authUser = {
                             uid: authUser.uid,
