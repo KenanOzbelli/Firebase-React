@@ -57,6 +57,89 @@ class AccountBase extends Component {
   }
 };
 
+const SocialLoginToogle = ({
+  onlyOneLeft, 
+  isEnabled,
+  signInMethod,
+  onLink,
+  onUnlink,
+}) => 
+  isEnabled ? (
+    <button 
+    type="button"
+    onClick={() => onUnlink(signInMethod.id)}
+    disabled={onlyOneLeft}
+    >
+      Deactivate {signInMethod.id}
+    </button>
+  ) : (
+    <button 
+      type="button"
+      onClick={() => onLink(signInMethod.provider)}
+    >
+      Link {signInMethod.id}
+    </button>
+  )
+
+class DefualtLoginToogle extends Component {
+  state = { passwordOne: '', passwordTwo: '' };
+
+  onSubmit = event => {
+    event.preventDefault();
+
+    this.props.onLink(this.state.passwordOne);
+    this.setState({ passwordOne: '', passwordTwo: '' });
+  };
+
+  onChange = event => {
+    this.setState({ [event.target.name]: event.target.value });
+  }
+
+  render(){
+    const {
+      onlyOneLeft, 
+      isEnabled, 
+      signInMethod,
+      onUnlink,
+    } = this.props;
+
+    const { passwordOne, passwordTwo } = this.state;
+
+    const isInvalid = 
+      passwordOne !== passwordTwo || passwordOne === '';
+    
+    return isEnabled ? (
+      <button 
+        type="button"
+        onClick={() => onUnlink(signInMethod.id)}
+        disabled={onlyOneLeft}
+        >
+          Deactivate {signInMethod.id}
+        </button>
+    ): (
+      <form onSubmit={this.onSubmit}>
+        <input
+          name="passwordOne"
+          value={passwordOne}
+          onChange={this.onChange}
+          type="password"
+          placeholder="New Password"
+        />
+        <input
+          name="passwordTwo"
+          value={passwordTwo}
+          onChange={this.onChange}
+          type="password"
+          placeholder="Confirm New Password" 
+          />
+          <button disabled={isInvalid} type="submit">
+            Link {signInMethod.id}
+          </button>
+      </form>
+    )
+  }
+}
+
 class LoginManagementBase extends Component {
 
   state={
@@ -91,6 +174,19 @@ class LoginManagementBase extends Component {
       .catch(error => this.setState({ error }));
   };
 
+  onDefaultLoginLink = password => {
+
+    const credential = this.props.firebase.emailAuthProvider.credential(
+      this.props.authUser.email,
+      password,
+    );
+
+    this.props.firebase.auth.currentUser
+      .linkWithCredential(credential)
+      .then(this.fetchSignInMethods)
+      .catch(error => this.setState({ error }));
+  }
+
   render(){
     const { activeSignInMethods, error } = this.state;
 
@@ -105,14 +201,22 @@ class LoginManagementBase extends Component {
             )
             return(
               <li key={signInMethod.id}>
-                {isEnabled ? (
-                  <button type="button" onClick={() => this.onUnlink(signInMethod.id)} disabled={onlyOneLeft}>
-                    Deactivate {signInMethod.id}
-                  </button>
-                ): (
-                  <button type="button" onClick={()=> this.onSocialLoginLink(signInMethod.provider)}>
-                    Link {signInMethod.id}
-                  </button>
+                {signInMethod.id === 'password' ? (
+                  <DefualtLoginToogle
+                    onlyOneLeft={onlyOneLeft}
+                    isEnabled={isEnabled}
+                    signInMethod={signInMethod} 
+                    onLink={this.onDefaultLoginLink}
+                    onUnlink={this.onUnlink}
+                    />
+                ):(
+                  <SocialLoginToogle 
+                    onlyOneLeft={onlyOneLeft}
+                    isEnabled={isEnabled}
+                    signInMethod={signInMethod}
+                    onLink={this.onSocialLoginLink}
+                    onUnlink={this.onUnlink}
+                  />
                 )}
               </li>
             )

@@ -9,7 +9,6 @@ import { ReactComponent as FACEBOOKSVG } from '../../assets/facebook.svg';
 import * as ROUTES from '../../constants/routes';
 
 const ERROR_CODE_ACCOUNT_EXISTS='auth/account-exists-with-different-credential';
-const ERROR_MSG_ACCOUNT_EXISTS=`An account with an E-Mail address to this social account already exists. Try to login from this account instead and associate your social accounts on your personal account page.`;
 
 const INITIAL_STATE = {
   email: '',
@@ -67,7 +66,22 @@ class MainSignInPage extends Component {
             })
             .catch(error => {
               if(error.code === ERROR_CODE_ACCOUNT_EXISTS){
-                error.message = ERROR_MSG_ACCOUNT_EXISTS
+                const pendingCred = error.credential;
+                const email = error.email;
+    
+                this.setState({Useremail: email, pendingCred: pendingCred});
+    
+                this.props.firebase
+                .fetchSignInMethodsForEmail(email)
+                .then(methods => {
+                    if(methods[0] === 'password'){
+                      this.setState({SocialLogin: false})
+                    }else{
+                      this.setState({SocialLogin: true, Provider: methods[0]})
+                    }
+                })
+              }else{
+                this.setState({ error });
               }
             })
         event.preventDefault();
