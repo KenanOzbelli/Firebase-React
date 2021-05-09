@@ -144,6 +144,7 @@ class LoginManagementBase extends Component {
 
   state={
     activeSignInMethods: [],
+    isLoading:true,
     error:null,
   }
 
@@ -155,7 +156,7 @@ class LoginManagementBase extends Component {
     this.props.firebase.auth
       .fetchSignInMethodsForEmail(this.props.authUser.email)
       .then(activeSignInMethods => 
-        this.setState({ activeSignInMethods, error: null }),
+        this.setState({ activeSignInMethods, error: null, isLoading: false }),
         )
       .catch(error => this.setState({ error }));
   };
@@ -175,7 +176,6 @@ class LoginManagementBase extends Component {
   };
 
   onDefaultLoginLink = password => {
-
     const credential = this.props.firebase.emailAuthProvider.credential(
       this.props.authUser.email,
       password,
@@ -188,17 +188,18 @@ class LoginManagementBase extends Component {
   }
 
   render(){
-    const { activeSignInMethods, error } = this.state;
+    const { activeSignInMethods,isLoading, error } = this.state;
+
 
     return(
       <div>
         Sign in Methods:
         <ul>
-          {SIGN_IN_METHODS.map(signInMethod => {
+          {isLoading ? (<>Loading...</>) 
+          :(
+          SIGN_IN_METHODS.map(signInMethod => {
             const onlyOneLeft = activeSignInMethods.length === 1;
-            const isEnabled = activeSignInMethods.includes(
-              signInMethod.id,
-            )
+            const isEnabled = activeSignInMethods.includes(signInMethod.id);
             return(
               <li key={signInMethod.id}>
                 {signInMethod.id === 'password' ? (
@@ -220,7 +221,9 @@ class LoginManagementBase extends Component {
                 )}
               </li>
             )
-          })}
+          })
+          )
+        }
         </ul>
         {error && error.message}
       </div>
