@@ -7,35 +7,7 @@ import { withAuthorization, withEmailVerification } from '../Session';
 import * as ROLES from '../../constants/roles';
 import * as ROUTES from '../../constants/routes';
 
-class Admin extends Component {
-  state = {
-    loading: false,
-    users: [],
-  };
-
-  componentDidMount() {
-    this.setState({ loading: true});
-    
-    this.props.firebase.users().on('value', snapshot => {
-      const usersObject = snapshot.val();
-
-      const usersList = Object.keys(usersObject).map(key =>  ({
-          ...usersObject[key],
-          uid: key,
-      }));
-      this.setState({
-        users: usersList,
-        loading: false
-      });
-    });
-  }
-  componentWillUnmount(){
-    this.props.firebase.users().off();
-  }
-
-  render(){
-    const { users, loading } = this.state;
-    return(
+const Admin = () => (
       <>
         <h1>Admin</h1>
         <p>
@@ -44,22 +16,16 @@ class Admin extends Component {
 
         <Switch>
           <Route exact path={ROUTES.ADMIN_DETAILS} component={UserItem} />
-          <Route exact path={ROUTES.ADMIN} component={ UserList } />
+          <Route exact path={ROUTES.ADMIN} component={ UserList} />
         </Switch>
-
-        {loading && <div> Loading... </div>}
-
-        <UserList users={users} /> 
       </>
     )
-  }
-}
 
   const UserItem = ({ match }) => (
     <div>
       <h2>User ({match.params.id})</h2>
     </div>
-  )
+  );
 
 
   class UserListBase extends Component {
@@ -69,19 +35,19 @@ class Admin extends Component {
     }
 
     componentDidMount(){
-      this.setState({ loading:true });
+      this.setState({ loading: true });
 
       this.props.firebase.users().on('value', snapshot => {
         const usersObject = snapshot.val();
-
-        const userList = Object.keys(usersObject).map(key => ({
+        
+        const usersList = Object.keys(usersObject).map(key => ({
           ...usersObject[key],
           uid: key,
         }));
 
         this.setState({
-          users: userList,
-          loading:false
+          users: usersList,
+          loading: false,
         });
       });
     }
@@ -92,7 +58,7 @@ class Admin extends Component {
 
     render(){
       const { users, loading } = this.state;
-
+  
       return(
         <>
           <h2>Users</h2>
@@ -123,10 +89,9 @@ class Admin extends Component {
 
   }
 
+const condition = authUser =>  authUser && !!authUser.roles[ROLES.ADMIN];
 
-const condition = authUser =>  authUser && !!authUser.roles[ROLES.ADMIN] 
-
-const UserList = withFirebase(UserListBase)
+const UserList = withFirebase(UserListBase);
 
 export default compose(
   withEmailVerification,

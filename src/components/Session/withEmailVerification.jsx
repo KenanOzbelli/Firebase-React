@@ -15,12 +15,18 @@ const needsEmailVerification = authUser =>
 const withEmailVerification = Component => {
     class withEmailVerification extends React.Component {
 
-        state = { isSent: false };
+        state = { isSent: false, error: null };
 
         onSendEmailVerification = () => {
             this.props.firebase.doSendEmailVerification()
             .then(() => {this.setState({isSent: true})}
             )
+            .catch((error) => { 
+                if(error.code === 'auth/too-many-requests'){
+                    this.setState({isSent: true});
+                    this.setState({error: "Email Verification already sent. Try again Later." });
+                }
+            })
         }
 
         render() {
@@ -48,6 +54,7 @@ const withEmailVerification = Component => {
                                  >
                                     Send confirmation Email
                                 </button>
+                                {this.state.error ? <p>{this.state.error}</p> : null}
                             </div>
                         ):(
                             <Component {...this.props} />

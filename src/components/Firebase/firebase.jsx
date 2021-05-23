@@ -46,6 +46,7 @@ class Firebase {
             url: process.env.REACT_APP_CONFIRMATION_EMAIL_REDIRECT,
         });
 
+
     // *** Merge Auth and DB User API *** //
 
     onAuthUserListener = (next, fallback) => 
