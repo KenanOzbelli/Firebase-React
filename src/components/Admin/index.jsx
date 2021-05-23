@@ -21,12 +21,74 @@ const Admin = () => (
       </>
     )
 
-  const UserItem = ({ match }) => (
-    <div>
-      <h2>User ({match.params.id})</h2>
-    </div>
-  );
+  class UserItemBase extends Component {
+    state = {
+      loading: false, 
+      user: null,
+    };
 
+    componentDidMount() {
+
+      if(this.props.location.state){
+        this.setState({user: this.props.location.state.user})
+        return;
+      }
+
+      this.setState({ loading: true });
+
+      this.props.firebase
+      .user(this.props.match.params.id)
+      .on('value', snapshot => {
+        this.setState({
+          user: snapshot.val(),
+          loading:false,
+        });
+      });
+    }
+
+    componentWillUnmount(){
+      this.props.firebase.user(this.props.match.params.id).off();
+    }
+
+
+    onSendPasswordResetEmail = () => {
+      this.props.firebase.doPasswordReset(this.state.user.email);
+    }
+
+    render() {
+      const { user, loading } = this.state;
+
+      return (
+        <div>
+          <h2>User ({ this.props.match.params.id })</h2>
+          {loading && <div>Loading....</div>}
+
+          {user && (
+            <div>
+              <span>
+                <strong>ID:</strong> {user.id}
+              </span>
+              <span>
+                <strong>Email:</strong> {user.email}
+              </span>
+              <span>
+                <strong>Username:</strong> {user.username}
+              </span>
+              <span>
+                <button
+                type="button"
+                onClick={this.onSendPasswordResetEmail}
+                >
+                  Send Password Reset
+                </button>
+              </span>
+            </div>
+          )}
+        </div>
+
+      )
+    }
+  }
 
   class UserListBase extends Component {
     state = {
@@ -76,7 +138,10 @@ const Admin = () => (
                   <strong>Username:</strong> {user.username}
                 </span>
                 <span>
-                  <Link to={`${ROUTES.ADMIN}/${user.uid}`}>
+                  <Link to={{
+                    pathname: `${ROUTES.ADMIN}/${user.uid}`,
+                    state: { user }
+                  }}>
                     Details
                   </Link>
                 </span>
@@ -92,6 +157,7 @@ const Admin = () => (
 const condition = authUser =>  authUser && !!authUser.roles[ROLES.ADMIN];
 
 const UserList = withFirebase(UserListBase);
+const UserItem = withFirebase(UserItemBase);
 
 export default compose(
   withEmailVerification,
